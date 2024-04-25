@@ -1,4 +1,6 @@
+from rates.models import ParkingRate
 from rates.services.parking_rate_service import ParkingRateService
+from rates.utils import get_format_with_datetime
 from rates.validations import (
     validate_start_time_is_before_end_time,
     validate_time_range_in_correct_format,
@@ -39,12 +41,6 @@ class PriceQueryParamsDeserializer(serializers.Serializer):
         return attrs
 
 
-# "days": "mon,tues,thurs",
-# "times": "0900-2100",
-# "tz": "America/Chicago",
-# "price": 1500
-
-
 class RateDeserializer(serializers.Serializer):
     days = serializers.CharField()
     times = serializers.CharField()
@@ -67,19 +63,38 @@ class RateDeserializer(serializers.Serializer):
 
     def get_start_time(self, obj):
         """Extract start time and convert to UTC"""
-        start_time = obj["times"].split("-", 2)
+        start_time = ParkingRateService.get_original_time_by_time_range(
+            time_range=obj["times"], specific_time="start"
+        )
         return ParkingRateService().convert_plain_text_time_tz_to_utc(
-            time=start_time[0], tz=obj["tz"]
+            time=start_time, tz=obj["tz"]
         )
 
     def get_end_time(self, obj):
         """Extract end time and convert to UTC"""
-        end_time = obj["times"].split("-", 2)
+        end_time = ParkingRateService.get_original_time_by_time_range(
+            time_range=obj["times"], specific_time="end"
+        )
         return ParkingRateService().convert_plain_text_time_tz_to_utc(
-            time=end_time[1], tz=obj["tz"]
+            time=end_time, tz=obj["tz"]
         )
 
     # Object level validations
 
     def validate(self, data):
         return data
+
+
+class RateSerializer(serializers.ModelSerializer):
+    times = serializers.CharField(source="original_time_range")
+    tz = serializers.CharField(source="original_given_timezone")
+
+    class Meta:
+        model = ParkingRate
+        fields = ("days", "times", "tz", "price")
+
+
+class PriceSerializer(RateSerializer):
+    class Meta:
+        model = ParkingRate
+        fields = ("price",)

@@ -18,12 +18,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rates import views
-from rest_framework.routers import DefaultRouter
-
-router = DefaultRouter()
-# router.register("", views.PriceListView, basename="ParkingRate")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    # path("", include(router.urls, namespace="rates")),
+    path("api/", include("rates.urls")),
 ]

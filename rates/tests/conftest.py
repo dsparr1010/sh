@@ -29,6 +29,19 @@ def parking_rate_wed():
 
 
 @pytest.fixture
+def parking_rate_mon_wed_sat():
+    data = {
+        "days": "mon,wed,sat",
+        "start_time": "06:00:00",
+        "end_time": "10:00:00",
+        "original_time_range": "0100-0500",
+        "original_given_timezone": "America/Chicago",
+        "price": 1000,
+    }
+    return ParkingRate.objects.create(**data)
+
+
+@pytest.fixture
 def parking_rate_fri_sat_sun():
     data = {
         "days": "fri,sat,sun",
@@ -43,6 +56,14 @@ def parking_rate_fri_sat_sun():
 
 @pytest.fixture
 def all_parking_rates(
-    parking_rate_mon_tues_thurs, parking_rate_wed, parking_rate_fri_sat_sun
+    parking_rate_mon_tues_thurs,
+    parking_rate_wed,
+    parking_rate_mon_wed_sat,
+    parking_rate_fri_sat_sun,
 ):
-    return {parking_rate_mon_tues_thurs, parking_rate_wed, parking_rate_fri_sat_sun}
+    return {
+        parking_rate_mon_tues_thurs,
+        parking_rate_wed,
+        parking_rate_mon_wed_sat,
+        parking_rate_fri_sat_sun,
+    }

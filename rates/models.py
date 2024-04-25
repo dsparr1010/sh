@@ -5,35 +5,31 @@ from rates.utils import get_format_with_datetime
 
 
 class ParkingRateManager(models.Manager):
-    def filter_within_time_frame(self, start_time, end_time):
+    def filter_within_time_frame(self, start_time, end_time, day):
+        results = self.filter_within_time_start_day_time(start_time=start_time, day=day)
 
-        end_time_constraint = (
-            "end_time__lte" if start_time < end_time else "end_time__gte"
-        )
+        # return early if no results were found
+        if len(results) == 0:
+            return results
 
-        filter_by = {"start_time__gte": start_time, end_time_constraint: end_time}
-        return self.get_queryset().filter(**filter_by)
+        # otherwise, find overlap with given end time and original end time
+        end_time_int = int(end_time.time().strftime("%H%M"))
+        applicable_rates_list = []
+
+        for rate in results:
+            original_end_time = ParkingRateService.get_original_time_by_time_range(
+                time_range=rate.original_time_range, specific_time="end"
+            )
+            if end_time_int <= int(original_end_time):
+                applicable_rates_list.append(rate)
+
+        return applicable_rates_list
+
+    def filter_within_time_start_day_time(self, day, start_time):
+        return self.filter_by_day(day=day).filter(start_time__lte=start_time)
 
     def filter_by_day(self, day):
         return self.get_queryset().filter(days__icontains=day)
-
-    def filter_by_day_and_time(self, start, end):
-        start_dt = get_format_with_datetime(iso_datetime=start)
-        start_time_utc = ParkingRateService().convert_timezone_to_utc(start_dt)
-        end_dt = get_format_with_datetime(iso_datetime=end)
-        end_time_utc = ParkingRateService().convert_timezone_to_utc(end_dt)
-
-        date = ParkingRateService().get_shorthand_weekday_name_by_number(
-            iso_format=start_time_utc
-        )
-
-        check = self.get_queryset().filter(
-            start_time__gte=start_time_utc,
-            start_time__lte=end_time_utc,
-            days__icontains=date,
-        )
-
-        print(check)
 
 
 class ParkingRate(models.Model):

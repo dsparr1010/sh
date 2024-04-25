@@ -26,11 +26,13 @@ class TestParkingRateService:
     def test_convert_timezone_to_utc(self, dt, expectation):
         """Test that datetime objects from non-UTC timezones convert to expected UTC value"""
         dt_iso_format = datetime.fromisoformat(dt)
+        expected_dt = datetime.fromisoformat(expectation)
 
         converted_dt = ParkingRateService().convert_timezone_to_utc(
             datetime_obj=dt_iso_format
         )
-        assert converted_dt == expectation
+
+        assert converted_dt == expected_dt
 
     @pytest.mark.parametrize(
         "time,timezone,expectation",
