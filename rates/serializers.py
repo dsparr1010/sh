@@ -23,12 +23,10 @@ class PriceQueryParamsDeserializer(serializers.Serializer):
 
     def get_days_of_week(self, obj):
         days = (obj["start"], obj["end"])
-        days_list = [
+        return [
             ParkingRateService().get_shorthand_weekday_name_by_number(iso_format=day)
             for day in days
         ]
-        validate_time_range_spans_one_day(days_list)
-        return days_list
 
     # Object level validations
 
@@ -46,8 +44,10 @@ class RateDeserializer(serializers.Serializer):
     times = serializers.CharField()
     tz = serializers.CharField(label="timezone")
     price = serializers.IntegerField(validators=[MinValueValidator(0)])
-    start_time = serializers.SerializerMethodField()
-    end_time = serializers.SerializerMethodField()
+    start_time_utc = serializers.SerializerMethodField()
+    end_time_utc = serializers.SerializerMethodField()
+    start_time_original = serializers.SerializerMethodField()
+    end_time_original = serializers.SerializerMethodField()
 
     # Field level validations
 
@@ -61,7 +61,7 @@ class RateDeserializer(serializers.Serializer):
 
     # Custom logic
 
-    def get_start_time(self, obj):
+    def get_start_time_utc(self, obj):
         """Extract start time and convert to UTC"""
         start_time = ParkingRateService.get_original_time_by_time_range(
             time_range=obj["times"], specific_time="start"
@@ -70,13 +70,25 @@ class RateDeserializer(serializers.Serializer):
             time=start_time, tz=obj["tz"]
         )
 
-    def get_end_time(self, obj):
+    def get_end_time_utc(self, obj):
         """Extract end time and convert to UTC"""
         end_time = ParkingRateService.get_original_time_by_time_range(
             time_range=obj["times"], specific_time="end"
         )
         return ParkingRateService().convert_plain_text_time_tz_to_utc(
             time=end_time, tz=obj["tz"]
+        )
+
+    def get_start_time_original(self, obj):
+        """Extract original start time in the original timezone"""
+        return ParkingRateService.get_original_time_by_time_range(
+            obj["times"], specific_time="start"
+        )
+
+    def get_end_time_original(self, obj):
+        """Extract original end time in the original timezone"""
+        return ParkingRateService.get_original_time_by_time_range(
+            obj["times"], specific_time="end"
         )
 
     # Object level validations

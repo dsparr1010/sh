@@ -1,59 +1,60 @@
+import json
 from django.db.models import QuerySet
+from django.http import JsonResponse, HttpResponse
+from django.shortcuts import render
 from rates.exceptions import UnavailableTimeSpansError
 from rates.models import ParkingRate
 from rates.serializers import PriceQueryParamsDeserializer, PriceSerializer
 from rates.services.parking_rate_service import ParkingRateService
-from rest_framework import generics, viewsets
+from rates.utils import replace_space_w_plus
+from rest_framework import viewsets, status, views
 from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
 
-class PriceListView(viewsets.GenericViewSet, ListModelMixin):
+class PriceListView(ListModelMixin, viewsets.GenericViewSet):
 
     serializer_class = PriceSerializer
-
-    def _contains_space(self, s):
-        return any(c.isspace() for c in s)
 
     def get_queryset(self):
         qps = self.request.query_params.copy()
         start_time = qps.get("start")
         end_time = qps.get("end")
 
-        start_contains_space = self._contains_space(start_time)
-        end_contains_space = self._contains_space(end_time)
-        if start_contains_space:
-            qps["start"] = start_time.replace(" ", "+")
-        if end_contains_space:
-            qps["end"] = end_time.replace(" ", "+")
+        qps["start"] = replace_space_w_plus(string_dt=start_time)
+        qps["end"] = replace_space_w_plus(string_dt=end_time)
 
         serializer = PriceQueryParamsDeserializer(data=qps)
-
         try:
+
             if serializer.is_valid(raise_exception=True):
                 start_time = self.request.query_params["start"]
                 end_time = self.request.query_params["end"]
 
-                # return ParkingRate.objects.all()
-
-                # TODO: create model; then we can query between the times
-                results = ParkingRateService().get_rates_within_datetimes(
+                results = ParkingRateService.get_rates_within_datetimes(
                     start=start_time, end=end_time
                 )
+
                 queryset = QuerySet(model=ParkingRate, query=[])
                 queryset._result_cache = results
                 return queryset
 
+            # elif serializer.errors:
+            #     return ParkingRate.objects.none()
         except UnavailableTimeSpansError as err:
-            Response(
-                {"message": str(err.message)},
-                status=err.status_code,
-            )
+            return ParkingRate.objects.none()
 
-    @action(methods=["get"], detail=False)
-    def get(self, request, *args, **kwargs):
+    @action(methods=["GET"], detail=False)
+    def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
 
+        if len(queryset) == 0:
+            # No applicable instances found - returning "unavailable"
+            return Response(
+                "unavailable",
+                status=status.HTTP_200_OK,
+            )
         return Response(serializer.data)

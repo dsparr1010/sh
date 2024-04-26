@@ -17,8 +17,10 @@ def seed_database_with_parking_rates():
         for item in deserializer.data:
             mapped_item = {
                 "days": item["days"],
-                "start_time": item["start_time"],
-                "end_time": item["end_time"],
+                "start_time_utc": item["start_time_utc"],
+                "end_time_utc": item["end_time_utc"],
+                "start_time_original": item["start_time_original"],
+                "end_time_original": item["end_time_original"],
                 "price": item["price"],
                 "original_time_range": item["times"],
                 "original_given_timezone": item["tz"],

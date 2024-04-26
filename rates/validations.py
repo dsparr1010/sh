@@ -25,7 +25,7 @@ def validate_time_range_in_correct_format(times: str):
 
 def validate_time_range_spans_one_day(days_of_week: List):
     if days_of_week[0] != days_of_week[1]:
-        raise UnavailableTimeSpansError(code="time_range")
+        raise UnavailableTimeSpansError
 
 
 def validate_timezone_name_is_recognized(timezone: str):

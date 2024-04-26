@@ -1,4 +1,3 @@
-import datetime
 import pytest
 from rates.models import ParkingRate
 from rates.services.parking_rate_service import ParkingRateService
@@ -17,6 +16,7 @@ class TestParkingRate:
     )
     @pytest.mark.django_db(transaction=True)
     def test_filter_by_day(self, parking_rate_fixture, search_term, count, request):
+        """Test that correct number of results are returned when filtering by day of the week"""
         request.getfixturevalue(parking_rate_fixture)
         instance = ParkingRate.objects.filter_by_day(day=search_term)
         assert instance.count() == count
@@ -24,16 +24,22 @@ class TestParkingRate:
 
     @pytest.mark.django_db(transaction=True)
     def test_filter_within_time_start_day_time_returns_correct_instance(
-        self, all_parking_rates
+        self, all_parking_rates, parking_rate_mon_wed_sat
     ):
-        dt = get_format_with_datetime("2015-07-01T07:00:00-05:00")
-        start_dt = ParkingRateService().convert_timezone_to_utc(dt)
-        day = ParkingRateService().get_shorthand_weekday_name_by_number(dt)
+        """Test that filtering within a given datetime's day and start time return correct results"""
+        dt = get_format_with_datetime("2015-07-01T01:00:00-05:00")  # Wednesday 1am CST
+        start_dt = ParkingRateService.convert_timezone(dt)  # Converts to 6am UTC time
+
+        day = ParkingRateService.get_shorthand_weekday_name_by_number(dt)
         res = ParkingRate.objects.filter_within_time_start_day_time(
             start_time=start_dt, day=day
         )
-        assert len(res) == 1
+
+        assert res.count() == 1  # Only one applicable rate found
         assert day in res[0].days
+        assert (
+            res[0] == parking_rate_mon_wed_sat
+        )  # One rate found should be equal to this instance
 
     @pytest.mark.django_db(transaction=True)
     def test_filter_within_time_start_day_time_finds_no_applicable_instances(
@@ -44,40 +50,47 @@ class TestParkingRate:
         Only start times after 6:00am CST on Wednesday would yield 1 result
         """
         dt = get_format_with_datetime("2015-07-01T05:00:00-05:00")
-        start_dt = ParkingRateService().convert_timezone_to_utc(dt)
+        start_dt = ParkingRateService.convert_timezone(dt)
         day = ParkingRateService().get_shorthand_weekday_name_by_number(dt)
         res = ParkingRate.objects.filter_within_time_start_day_time(
             start_time=start_dt, day=day
         )
         assert res.count() == 0
 
+    @pytest.mark.parametrize(
+        "start_time,end_time,parking_rate_fixture",
+        (
+            (
+                "2015-07-01T06:00:00-05:00",  # Wednesday 6am CST
+                "2015-07-01T17:00:00-05:00",  # -> 5pm CST
+                "parking_rate_wed",
+            ),
+            (
+                "2015-07-03T10:00:00-06:00",  # Friday 10am EST
+                "2015-07-03T19:00:00-06:00",  # -> 7pm EST
+                "parking_rate_fri_sat_sun",
+            ),
+            (
+                "2015-07-02T23:00:00+09:00",  # Thursday 11pm JST
+                "2015-07-02T23:00:00+09:00",  # -> 12pm JST
+                "parking_rate_mon_tues_thurs",
+            ),
+        ),
+    )
     @pytest.mark.django_db(transaction=True)
-    def test_filter_within_time_start_day_time_returns_correct_instance(
-        self, all_parking_rates
+    def test_filter_within_time_frame_returns_correct_instance(
+        self, start_time, end_time, parking_rate_fixture, all_parking_rates, request
     ):
-        dt = get_format_with_datetime("2015-07-01T06:00:00-05:00")
-        start_dt = ParkingRateService().convert_timezone_to_utc(dt)
+        """Test that expected rate instance is returned when filtered by day and times"""
+        matching_rate_fixture = request.getfixturevalue(parking_rate_fixture)
+        dt = get_format_with_datetime(start_time)
+        start_dt = ParkingRateService.convert_timezone(dt)
         day = ParkingRateService().get_shorthand_weekday_name_by_number(dt)
-        dt = get_format_with_datetime("2015-07-01T17:00:00-05:00")
-        end_dt = datetime.datetime.fromisoformat("2015-07-01T17:00:00-05:00")
+        end_dt = get_format_with_datetime(end_time)
+        end_dt_utc = ParkingRateService.convert_timezone(end_dt)
 
         res = ParkingRate.objects.filter_within_time_frame(
-            start_time=start_dt, end_time=end_dt, day=day
+            start_time=start_dt, end_time=end_dt_utc, day=day
         )
-        assert len(res) == 1
-        assert day in res[0].days
-
-    @pytest.mark.django_db(transaction=True)
-    def test_filter_within_time_start_day_time_returns_multiple_correct_instance(
-        self, all_parking_rates
-    ):
-        dt = get_format_with_datetime("2015-07-01T06:00:00-05:00")
-        start_dt = ParkingRateService().convert_timezone_to_utc(dt)
-        day = ParkingRateService().get_shorthand_weekday_name_by_number(dt)
-        end_dt = datetime.datetime.fromisoformat("2015-07-01T17:00:00-05:00")
-
-        res = ParkingRate.objects.filter_within_time_frame(
-            start_time=start_dt, end_time=end_dt, day=day
-        )
-        assert len(res) == 1
-        assert day in res[0].days
+        assert res.count() == 1
+        assert res[0] == matching_rate_fixture

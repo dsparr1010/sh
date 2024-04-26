@@ -1,4 +1,5 @@
 import pytest
+import pytz
 from datetime import datetime
 from rates.services.parking_rate_service import ParkingRateService
 
@@ -28,8 +29,8 @@ class TestParkingRateService:
         dt_iso_format = datetime.fromisoformat(dt)
         expected_dt = datetime.fromisoformat(expectation)
 
-        converted_dt = ParkingRateService().convert_timezone_to_utc(
-            datetime_obj=dt_iso_format
+        converted_dt = ParkingRateService.convert_timezone(
+            datetime_obj=dt_iso_format, timezone="UTC"
         )
 
         assert converted_dt == expected_dt

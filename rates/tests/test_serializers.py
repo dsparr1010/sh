@@ -27,18 +27,18 @@ class TestPriceQueryParamsDeserializer:
             assert deserializer.errors["start_time"][0].code == "invalid"
 
     def test_validate_days_of_week(self):
-        """Ensures serializer is not valid when given time spans covers multiple days"""
+        """
+        Ensures serializer is not valid and raises UnavailableTimeSpansError
+        when given time spans covers multiple days
+        """
         data = {
             "start": "2015-07-04T20:00:00+00:00",  # Saturday
             "end": "2015-07-08T20:00:00+00:00",  # Wednesday
         }
         deserializer = PriceQueryParamsDeserializer(data=data)
 
-        assert deserializer.is_valid() is False
-        assert (
-            str(deserializer.errors["non_field_errors"][0])
-            == UnavailableTimeSpansError.message
-        )
+        with pytest.raises(UnavailableTimeSpansError):
+            assert deserializer.is_valid() is False
 
 
 class TestRateDeserializer:

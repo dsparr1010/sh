@@ -7,13 +7,6 @@ from rates.exceptions import UnavailableTimeSpansError
 from rates.utils import get_format_with_datetime
 
 
-class ParkingRateInfo:
-    DAYS: str
-    TIMES: str
-    TIMEZONE: str
-    PRICE: int
-
-
 class ParkingRateService:
     STANDARDIZED_TIME = pytz.utc  # Convert all times given from requests to UTC
     TIME_FORMAT = "%Y-%m-%d %H:%M:%S%z"
@@ -23,8 +16,10 @@ class ParkingRateService:
     def _format_datetime(self, dt):
         return dt.strftime("%Y-%m-%d %H:%M:%S%z")
 
-    def get_shorthand_weekday_name_by_number(self, iso_format: datetime):
-        return self.DAYS_OF_WEEK[iso_format.weekday()]
+    @staticmethod
+    def get_shorthand_weekday_name_by_number(iso_format: datetime):
+        DAYS_OF_WEEK = ["mon", "tues", "wed", "thurs", "fri", "sat", "sun"]
+        return DAYS_OF_WEEK[iso_format.weekday()]
 
     @staticmethod
     def get_original_time_by_time_range(
@@ -40,16 +35,18 @@ class ParkingRateService:
             case _:
                 return split_range
 
-    def get_rates_within_datetimes(self, start: str, end: str):
+    @classmethod
+    def get_rates_within_datetimes(cls, start: str, end: str):
         from rates.models import ParkingRate
 
         iso_start_dt = get_format_with_datetime(start)
-        start_dt = self.convert_timezone_to_utc(iso_start_dt)
-        day = self.get_shorthand_weekday_name_by_number(start_dt)
+        start_dt = cls.convert_timezone(iso_start_dt)
+        day = cls.get_shorthand_weekday_name_by_number(start_dt)
         end_dt = get_format_with_datetime(end)
+        end_dt_utc = cls.convert_timezone(end_dt)
 
         results = ParkingRate.objects.filter_within_time_frame(
-            start_time=start_dt, end_time=end_dt, day=day
+            start_time=start_dt, end_time=end_dt_utc, day=day
         )
 
         match len(results):
@@ -58,15 +55,16 @@ class ParkingRateService:
             case _:
                 return results
 
-    def convert_timezone_to_utc(self, datetime_obj: datetime):
-        """Convert a datetime object to UTC"""
+    @staticmethod
+    def convert_timezone(datetime_obj: datetime, timezone: str = "UTC"):
+        """Convert a datetime object to the given timezone"""
         source_tz = datetime_obj.tzname()
+        target_timezone = pytz.timezone(timezone)
 
-        if source_tz == self.STANDARDIZED_TIME:
-            return datetime_obj
+        if source_tz == target_timezone:
+            return datetime
 
-        # return self._format_datetime(datetime_obj.astimezone(self.STANDARDIZED_TIME))
-        return datetime_obj.astimezone(self.STANDARDIZED_TIME)
+        return datetime_obj.astimezone(target_timezone)
 
     def convert_plain_text_time_tz_to_utc(self, time: str, tz: str):
         given_timezone = pytz.timezone(tz)
