@@ -41,9 +41,7 @@ class PriceListView(ListModelMixin, viewsets.GenericViewSet):
                 queryset._result_cache = results
                 return queryset
 
-            # elif serializer.errors:
-            #     return ParkingRate.objects.none()
-        except UnavailableTimeSpansError as err:
+        except UnavailableTimeSpansError:
             return ParkingRate.objects.none()
 
     @action(methods=["GET"], detail=False)
