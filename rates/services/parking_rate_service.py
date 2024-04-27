@@ -76,32 +76,6 @@ class ParkingRateService:
             # If there is no instance found, then there is nothing to update
             raise NoInstanceFound from err
 
-    @classmethod
-    def convert_times_and_update_rate(cls, days: str, times: str, tz: str, price: int):
-        from rates.models import ParkingRate
-
-        results = ParkingRate.objects.find_instance(days, times, tz)
-
-        # If there is no instance found, then there is nothing to update
-        if results.exists() == False:
-            return {
-                "does_not_exist": "Nothing to update! Instance matching data was nto found"
-            }
-
-        instance = results[0]
-
-        if instance.price == price:
-            # return {
-            #     "nothing_to_update": "Exact match already exists - Nothing to update"
-            # }
-            return instance
-
-        # Otherwise, update price
-        instance.price = price
-        instance.save()
-
-        return instance
-
     @staticmethod
     def convert_timezone(datetime_obj: datetime, timezone: str = "UTC"):
         """Convert a datetime object to the given timezone"""

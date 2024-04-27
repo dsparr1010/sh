@@ -9,42 +9,6 @@ from rates.utils import get_format_with_datetime
 
 class ParkingRateManager(models.Manager):
 
-    # Find specific instance
-
-    def find_instance(self, days: str, times: str, tz: str) -> bool:
-        return self.filter(
-            days=days,
-            original_time_range=times,
-            original_given_timezone=tz,
-        )
-
-    # def update_if_exists(self, days: str, times: str, tz: str):
-    #     from rates.models import ParkingRate
-
-    #     results = ParkingRate.objects.find_instance(days, times, tz)
-
-    #     # If there is no instance found, then there is nothing to update
-    #     if results.exists() == False:
-    #         return {
-    #             "does_not_exist": "Nothing to update! Instance matching data was nto found"
-    #         }
-
-    #     instance = results[0]
-
-    #     if instance.price == price:
-    #         # return {
-    #         #     "nothing_to_update": "Exact match already exists - Nothing to update"
-    #         # }
-    #         return instance
-
-    #     # Otherwise, update price
-    #     instance.price = price
-    #     instance.save()
-
-    #     return instance
-
-    # Filter by Day/Time
-
     def filter_within_time_frame(self, start_time, end_time, day):
         results = self.filter_within_time_start_day_time(start_time=start_time, day=day)
 
@@ -57,23 +21,6 @@ class ParkingRateManager(models.Manager):
                 return results
             case _:
                 return results.filter(end_time_utc__gte=end_time)
-
-        # TODO: Keep until stable
-        # otherwise, find overlap with given end time and original end time
-        # applicable_rates_list = []
-
-        # for rate in results:
-        #     source_end_time = ParkingRateService.get_original_time_by_time_range(
-        #         time_range=rate.original_time_range, specific_time="end"
-        #     )
-        #     source_tz = pytz.timezone(rate.original_given_timezone)
-        #     end_time_as_given_tz = end_time.astimezone(source_tz)
-        #     end_time_as_int = int(end_time_as_given_tz.time().strftime("%H%M"))
-
-        #     if end_time_as_int <= int(source_end_time):
-        #         applicable_rates_list.append(rate)
-
-        # return applicable_rates_list
 
     def filter_within_time_start_day_time(self, day: str, start_time: datetime):
         return self.filter_by_day(day=day).filter(start_time_utc__lte=start_time)
