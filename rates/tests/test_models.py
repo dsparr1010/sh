@@ -72,7 +72,7 @@ class TestParkingRate:
             ),
             (
                 "2015-07-02T23:00:00+09:00",  # Thursday 11pm JST
-                "2015-07-02T23:00:00+09:00",  # -> 12pm JST
+                "2015-07-02T02:00:00+09:00",  # -> 12pm JST
                 "parking_rate_mon_tues_thurs",
             ),
         ),
@@ -85,7 +85,7 @@ class TestParkingRate:
         matching_rate_fixture = request.getfixturevalue(parking_rate_fixture)
         dt = get_format_with_datetime(start_time)
         start_dt = ParkingRateService.convert_timezone(dt)
-        day = ParkingRateService().get_shorthand_weekday_name_by_number(dt)
+        day = ParkingRateService.get_shorthand_weekday_name_by_number(dt)
         end_dt = get_format_with_datetime(end_time)
         end_dt_utc = ParkingRateService.convert_timezone(end_dt)
 
@@ -94,3 +94,48 @@ class TestParkingRate:
         )
         assert res.count() == 1
         assert res[0] == matching_rate_fixture
+
+    @pytest.mark.django_db(transaction=True)
+    def test_find_instance_returns_instance(
+        self, all_parking_rates, parking_rate_fri_sat_sun
+    ):
+        data = {
+            "days": "fri,sat,sun",
+            "times": "0900-2100",
+            "tz": "America/Chicago",
+        }
+        res = ParkingRate.objects.find_instance(**data)
+        assert len(res) == 1
+        assert res[0] == parking_rate_fri_sat_sun
+
+    @pytest.mark.django_db(transaction=True)
+    def test_find_instance_returns_none_when_no_days_match(
+        self, all_parking_rates, parking_rate_fri_sat_sun
+    ):
+        data = {
+            "days": "sun,sat,fri",  # Existing rate is for fri,sat,sun exactly
+            "times": "0900-2100",
+            "tz": "America/Chicago",
+        }
+        res = ParkingRate.objects.find_instance(**data)
+        assert res.exists() is False
+
+    @pytest.mark.django_db(transaction=True)
+    def test_find_instance_returns_none_when_no_time_match(self, all_parking_rates):
+        data = {
+            "days": "fri,sat,sun",
+            "times": "1000-2100",  # Existing rate is for 0900-2100
+            "tz": "America/Chicago",
+        }
+        res = ParkingRate.objects.find_instance(**data)
+        assert res.exists() is False
+
+    @pytest.mark.django_db(transaction=True)
+    def test_find_instance_returns_none_when_no_tz_match(self, all_parking_rates):
+        data = {
+            "days": "fri,sat,sun",
+            "times": "0900-2100",
+            "tz": "UTC",  # Existing rate has 'America/Chicago' timezone
+        }
+        res = ParkingRate.objects.find_instance(**data)
+        assert res.exists() is False

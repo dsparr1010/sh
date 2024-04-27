@@ -1,6 +1,10 @@
-from django.core.exceptions import ValidationError
-from rest_framework import status
-
-
 class UnavailableTimeSpansError(BaseException):
     pass
+
+
+class NoInstanceFound(BaseException):
+    message = "No instance found to update"
+
+
+class NothingToUpdate(BaseException):
+    message = "Given data matches perfectly - nothing to update"

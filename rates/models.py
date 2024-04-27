@@ -8,6 +8,43 @@ from rates.utils import get_format_with_datetime
 
 
 class ParkingRateManager(models.Manager):
+
+    # Find specific instance
+
+    def find_instance(self, days: str, times: str, tz: str) -> bool:
+        return self.filter(
+            days=days,
+            original_time_range=times,
+            original_given_timezone=tz,
+        )
+
+    # def update_if_exists(self, days: str, times: str, tz: str):
+    #     from rates.models import ParkingRate
+
+    #     results = ParkingRate.objects.find_instance(days, times, tz)
+
+    #     # If there is no instance found, then there is nothing to update
+    #     if results.exists() == False:
+    #         return {
+    #             "does_not_exist": "Nothing to update! Instance matching data was nto found"
+    #         }
+
+    #     instance = results[0]
+
+    #     if instance.price == price:
+    #         # return {
+    #         #     "nothing_to_update": "Exact match already exists - Nothing to update"
+    #         # }
+    #         return instance
+
+    #     # Otherwise, update price
+    #     instance.price = price
+    #     instance.save()
+
+    #     return instance
+
+    # Filter by Day/Time
+
     def filter_within_time_frame(self, start_time, end_time, day):
         results = self.filter_within_time_start_day_time(start_time=start_time, day=day)
 

@@ -24,7 +24,7 @@ class PriceQueryParamsDeserializer(serializers.Serializer):
     def get_days_of_week(self, obj):
         days = (obj["start"], obj["end"])
         return [
-            ParkingRateService().get_shorthand_weekday_name_by_number(iso_format=day)
+            ParkingRateService.get_shorthand_weekday_name_by_number(iso_format=day)
             for day in days
         ]
 
@@ -34,6 +34,7 @@ class PriceQueryParamsDeserializer(serializers.Serializer):
         validate_start_time_is_before_end_time(
             start_time=attrs["start"], end_time=attrs["end"]
         )
+
         validate_time_range_spans_one_day(self.get_days_of_week(attrs))
 
         return attrs
@@ -93,8 +94,13 @@ class RateDeserializer(serializers.Serializer):
 
     # Object level validations
 
-    def validate(self, data):
-        return data
+    def validate(self, attrs):
+        validate_start_time_is_before_end_time(
+            start_time=self.get_start_time_original(attrs),
+            end_time=self.get_end_time_original(attrs),
+        )
+
+        return attrs
 
 
 class RateSerializer(serializers.ModelSerializer):

@@ -1,17 +1,16 @@
 from typing import Optional, Union
 import pytz
+from django.db.models import Q
 
 from datetime import datetime
 
-from rates.exceptions import UnavailableTimeSpansError
+from rates.exceptions import NoInstanceFound, NothingToUpdate, UnavailableTimeSpansError
 from rates.utils import get_format_with_datetime
 
 
 class ParkingRateService:
     STANDARDIZED_TIME = pytz.utc  # Convert all times given from requests to UTC
     TIME_FORMAT = "%Y-%m-%d %H:%M:%S%z"
-
-    DAYS_OF_WEEK = ["mon", "tues", "wed", "thurs", "fri", "sat", "sun"]
 
     def _format_datetime(self, dt):
         return dt.strftime("%Y-%m-%d %H:%M:%S%z")
@@ -40,13 +39,13 @@ class ParkingRateService:
         from rates.models import ParkingRate
 
         iso_start_dt = get_format_with_datetime(start)
-        start_dt = cls.convert_timezone(iso_start_dt)
-        day = cls.get_shorthand_weekday_name_by_number(start_dt)
+        start_dt_utc = cls.convert_timezone(iso_start_dt)
+        day = cls.get_shorthand_weekday_name_by_number(start_dt_utc)
         end_dt = get_format_with_datetime(end)
         end_dt_utc = cls.convert_timezone(end_dt)
 
         results = ParkingRate.objects.filter_within_time_frame(
-            start_time=start_dt, end_time=end_dt_utc, day=day
+            start_time=start_dt_utc, end_time=end_dt_utc, day=day
         )
 
         match len(results):
@@ -54,6 +53,54 @@ class ParkingRateService:
                 raise UnavailableTimeSpansError
             case _:
                 return results
+
+    @classmethod
+    def update_rate_instance(cls, days, start_time_utc, end_time_utc, price, **kwargs):
+        from rates.models import ParkingRate
+
+        try:
+            result = ParkingRate.objects.filter_within_time_frame(
+                start_time=start_time_utc, end_time=end_time_utc, day=days
+            ).first()
+
+            if result.price == price:
+                # Nothing to update - request body matches existing instance
+                raise NothingToUpdate
+
+            # Otherwise, update price
+            result.price = price
+            result.save()
+
+            return result
+        except UnavailableTimeSpansError as err:
+            # If there is no instance found, then there is nothing to update
+            raise NoInstanceFound from err
+
+    @classmethod
+    def convert_times_and_update_rate(cls, days: str, times: str, tz: str, price: int):
+        from rates.models import ParkingRate
+
+        results = ParkingRate.objects.find_instance(days, times, tz)
+
+        # If there is no instance found, then there is nothing to update
+        if results.exists() == False:
+            return {
+                "does_not_exist": "Nothing to update! Instance matching data was nto found"
+            }
+
+        instance = results[0]
+
+        if instance.price == price:
+            # return {
+            #     "nothing_to_update": "Exact match already exists - Nothing to update"
+            # }
+            return instance
+
+        # Otherwise, update price
+        instance.price = price
+        instance.save()
+
+        return instance
 
     @staticmethod
     def convert_timezone(datetime_obj: datetime, timezone: str = "UTC"):

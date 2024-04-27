@@ -2,9 +2,11 @@ import pytest
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime
 from django.core.exceptions import ValidationError
+from rates.exceptions import UnavailableTimeSpansError
 from rates.validations import (
     validate_start_time_is_before_end_time,
     validate_time_range_in_correct_format,
+    validate_time_range_spans_one_day,
 )
 
 
@@ -45,9 +47,6 @@ class TestValidateStartAndEndTimes:
                 end_time=datetime.fromisoformat(end_time),
             )
 
-
-class TestTimeRanges:
-
     @pytest.mark.parametrize(
         "time_range,expectation",
         (
@@ -73,3 +72,16 @@ class TestTimeRanges:
         """Ensure validation raises error if time range is not in correct format"""
         with expectation:
             validate_time_range_in_correct_format(times=time_range)
+
+    @pytest.mark.parametrize(
+        "days_list,expectation",
+        (
+            (["sat", "sun"], pytest.raises(UnavailableTimeSpansError)),
+            (["sun", "wed"], pytest.raises(UnavailableTimeSpansError)),
+            (["mon", "mon"], does_not_raise()),
+            (["tues", "tues"], does_not_raise()),
+        ),
+    )
+    def test_validate_time_range_spans_one_day(self, days_list, expectation):
+        with expectation:
+            validate_time_range_spans_one_day(days_of_week=days_list)

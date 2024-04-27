@@ -1,16 +1,16 @@
-import json
-from django.db.models import QuerySet
-from django.http import JsonResponse, HttpResponse
-from django.shortcuts import render
-from rates.exceptions import UnavailableTimeSpansError
+from rates.exceptions import NoInstanceFound, NothingToUpdate, UnavailableTimeSpansError
 from rates.models import ParkingRate
-from rates.serializers import PriceQueryParamsDeserializer, PriceSerializer
+from rates.serializers import (
+    PriceQueryParamsDeserializer,
+    PriceSerializer,
+    RateDeserializer,
+    RateSerializer,
+)
 from rates.services.parking_rate_service import ParkingRateService
 from rates.utils import replace_space_w_plus
-from rest_framework import viewsets, status, views
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin
-from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
 
@@ -33,13 +33,9 @@ class PriceListView(ListModelMixin, viewsets.GenericViewSet):
                 start_time = self.request.query_params["start"]
                 end_time = self.request.query_params["end"]
 
-                results = ParkingRateService.get_rates_within_datetimes(
+                return ParkingRateService.get_rates_within_datetimes(
                     start=start_time, end=end_time
                 )
-
-                queryset = QuerySet(model=ParkingRate, query=[])
-                queryset._result_cache = results
-                return queryset
 
         except UnavailableTimeSpansError:
             return ParkingRate.objects.none()
@@ -56,3 +52,26 @@ class PriceListView(ListModelMixin, viewsets.GenericViewSet):
                 status=status.HTTP_200_OK,
             )
         return Response(serializer.data)
+
+
+class RatesListView(viewsets.GenericViewSet, ListModelMixin):
+    queryset = ParkingRate.objects.all()
+    serializer_class = RateSerializer
+
+    @action(methods=["GET"], detail=False)
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(methods=["PUT"], detail=False)
+    def update(self, request, *args, **kwargs):
+        deserializer = RateDeserializer(data=request.data)
+        try:
+            deserializer.is_valid()
+            data = deserializer.data
+            instance = ParkingRateService.update_rate_instance(**data)
+            serializer = PriceSerializer(instance)
+            return Response(serializer.data)
+        except (NoInstanceFound, NothingToUpdate) as err:
+            return Response(err.message, status=status.HTTP_200_OK)

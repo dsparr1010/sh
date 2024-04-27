@@ -18,17 +18,20 @@ def validate_start_time_is_before_end_time(start_time: datetime, end_time: datet
 
 
 def validate_time_range_in_correct_format(times: str):
+    """Ensures given times match the expected format"""
     pattern = r"^[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]$"
     if not re.match(pattern, times):
         raise ValidationError("Invalid time range format. Use '0600-1800' format")
 
 
 def validate_time_range_spans_one_day(days_of_week: List):
+    """Detect if a time span ranges over more than one day"""
     if days_of_week[0] != days_of_week[1]:
         raise UnavailableTimeSpansError
 
 
 def validate_timezone_name_is_recognized(timezone: str):
+    """Ensure a given timezone is available in pytz library"""
     if timezone not in pytz.all_timezones_set:
         reference_link = (
             "https://gist.github.com/JellyWX/913dfc8b63d45192ad6cb54c829324ee"
