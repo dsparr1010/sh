@@ -1,10 +1,10 @@
 import pytest
 from rates.models import ParkingRate
-from rates.services.parking_rate_service import ParkingRateService
 from rates.utils import get_format_with_datetime
+from rates.services.parking_rate_service import ParkingRateService
 
 
-class TestParkingRate:
+class TestParkingRateModel:
 
     @pytest.mark.parametrize(
         "parking_rate_fixture,search_term,count",

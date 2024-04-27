@@ -14,4 +14,3 @@ python manage.py seed_parking_rates
 
 
 python manage.py runserver 5000
-

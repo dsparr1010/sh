@@ -1,15 +1,12 @@
 from datetime import datetime
-import pytz
 from django.db import models
-
 from rates.exceptions import UnavailableTimeSpansError
-from rates.services.parking_rate_service import ParkingRateService
-from rates.utils import get_format_with_datetime
 
 
 class ParkingRateManager(models.Manager):
 
     def filter_within_time_frame(self, start_time, end_time, day):
+        """Query for rates within a day and time range"""
         results = self.filter_within_time_start_day_time(start_time=start_time, day=day)
 
         match len(results):
@@ -23,9 +20,11 @@ class ParkingRateManager(models.Manager):
                 return results.filter(end_time_utc__gte=end_time)
 
     def filter_within_time_start_day_time(self, day: str, start_time: datetime):
+        """Query for rates within a day and after a start time"""
         return self.filter_by_day(day=day).filter(start_time_utc__lte=start_time)
 
-    def filter_by_day(self, day):
+    def filter_by_day(self, day: str):
+        """Query for rates that contain a specific day or days"""
         return self.get_queryset().filter(days__icontains=day)
 
 

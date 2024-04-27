@@ -1,14 +1,13 @@
+from django.core.validators import MinValueValidator
+from rest_framework import serializers
 from rates.models import ParkingRate
 from rates.services.parking_rate_service import ParkingRateService
-from rates.utils import get_format_with_datetime
 from rates.validations import (
     validate_start_time_is_before_end_time,
     validate_time_range_in_correct_format,
     validate_time_range_spans_one_day,
     validate_timezone_name_is_recognized,
 )
-from django.core.validators import MinValueValidator
-from rest_framework import serializers
 
 
 class PriceQueryParamsDeserializer(serializers.Serializer):
@@ -16,8 +15,6 @@ class PriceQueryParamsDeserializer(serializers.Serializer):
     start = serializers.DateTimeField(input_formats=["iso-8601"])
     end = serializers.DateTimeField(input_formats=["iso-8601"])
     days_of_week = serializers.SerializerMethodField()
-
-    # Field level validations
 
     # Custom logic
 
