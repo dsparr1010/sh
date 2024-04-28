@@ -53,8 +53,8 @@ class TestPriceListView:
         matching_rate_fixture = request.getfixturevalue(parking_rate_fixture)
         url_w_params = f"{self.url}?start={start_time}&end={end_time}"
         response = self.client.get(url_w_params)
-        assert len(response.data) == 1
-        assert response.data[0] == {"price": matching_rate_fixture.price}
+        assert "price" in response.data
+        assert response.data["price"] == matching_rate_fixture.price
 
 
 class TestRatesListView:

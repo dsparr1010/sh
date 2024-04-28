@@ -43,7 +43,6 @@ class PriceListView(ListModelMixin, viewsets.GenericViewSet):
     @action(methods=["GET"], detail=False)
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
 
         if len(queryset) == 0:
             # No applicable instances found - returning "unavailable"
@@ -51,6 +50,10 @@ class PriceListView(ListModelMixin, viewsets.GenericViewSet):
                 "unavailable",
                 status=status.HTTP_200_OK,
             )
+
+        # Grab only instance and serialize
+        queryset = queryset.first()
+        serializer = self.get_serializer(queryset)
         return Response(serializer.data)
 
 

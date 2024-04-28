@@ -11,6 +11,7 @@ from rates.validations import (
 
 
 class PriceQueryParamsDeserializer(serializers.Serializer):
+    """Deserialize query parameters for '/price' endpoint"""
 
     start = serializers.DateTimeField(input_formats=["iso-8601"])
     end = serializers.DateTimeField(input_formats=["iso-8601"])
@@ -38,6 +39,8 @@ class PriceQueryParamsDeserializer(serializers.Serializer):
 
 
 class RateDeserializer(serializers.Serializer):
+    """Deserialize request body for '/rates' endpoint"""
+
     days = serializers.CharField()
     times = serializers.CharField()
     tz = serializers.CharField(label="timezone")
@@ -101,6 +104,8 @@ class RateDeserializer(serializers.Serializer):
 
 
 class RateSerializer(serializers.ModelSerializer):
+    """Serialize ParkingRate objects for '/rate' endpoint"""
+
     times = serializers.CharField(source="original_time_range")
     tz = serializers.CharField(source="original_given_timezone")
 
@@ -110,6 +115,8 @@ class RateSerializer(serializers.ModelSerializer):
 
 
 class PriceSerializer(RateSerializer):
+    """Serialize ParkingRate.price for '/price' endpoint"""
+
     class Meta:
         model = ParkingRate
         fields = ("price",)

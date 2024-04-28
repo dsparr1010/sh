@@ -3,6 +3,9 @@
 # from rates.apps import RatesConfig
 # from rates.models import ParkingRate
 
+# Keeping this to show of a failed attempt to seed db on start
+# Received 'AppRegistryNotReady("Apps aren't loaded yet.")' error.
+
 
 # class TestRatesConfig(TestCase):
 

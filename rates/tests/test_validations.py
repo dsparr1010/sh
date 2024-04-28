@@ -83,5 +83,6 @@ class TestValidateStartAndEndTimes:
         ),
     )
     def test_validate_time_range_spans_one_day(self, days_list, expectation):
+        """Ensure a time span does not range across multiple days"""
         with expectation:
             validate_time_range_spans_one_day(days_of_week=days_list)

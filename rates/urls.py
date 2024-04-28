@@ -1,5 +1,4 @@
 from django.urls import path
-
 from rates.views import PriceListView, RatesListView
 from rest_framework.routers import SimpleRouter
 

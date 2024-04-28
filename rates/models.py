@@ -35,12 +35,19 @@ class ParkingRate(models.Model):
     days = models.CharField(
         max_length=32,
         help_text="Shorthand days of the week that the rate applies to",
+        db_index=True,
     )
     start_time_utc = models.TimeField(
-        auto_now=False, auto_now_add=False, help_text="All times stored as UTC"
+        auto_now=False,
+        auto_now_add=False,
+        help_text="All times stored as UTC",
+        db_index=True,
     )
     end_time_utc = models.TimeField(
-        auto_now=False, auto_now_add=False, help_text="All times stored as UTC"
+        auto_now=False,
+        auto_now_add=False,
+        help_text="All times stored as UTC",
+        db_index=True,
     )
     start_time_original = models.TimeField(
         auto_now=False,
@@ -59,3 +66,5 @@ class ParkingRate(models.Model):
     original_given_timezone = models.CharField(
         max_length=32, help_text="Timezone specified by owner"
     )
+
+    unique_together = ("days", "start_time_utc", "end_time_utc")

@@ -1,7 +1,7 @@
 import pytest
 from rates.models import ParkingRate
-from rates.utils import get_format_with_datetime
 from rates.services.parking_rate_service import ParkingRateService
+from rates.utils import get_format_with_datetime
 
 
 class TestParkingRateModel:

@@ -1,5 +1,4 @@
 import pytest
-import pytz
 from datetime import datetime
 from rates.exceptions import NothingToUpdate
 from rates.services.parking_rate_service import ParkingRateService
@@ -55,6 +54,7 @@ class TestParkingRateService:
     def test_update_rate_instance_updates_price(
         self, all_parking_rates, parking_rate_fri_sat_sun
     ):
+        """Test that a price is updated"""
         original_price = parking_rate_fri_sat_sun.price
         data = {
             "days": "fri,sat,sun",
@@ -70,6 +70,7 @@ class TestParkingRateService:
     def test_update_rate_instance_does_not_update_if_price_is_unchanged(
         self, parking_rate_fri_sat_sun
     ):
+        """Test that an instance is not updated when existing instance is identical"""
         data = {
             "days": "fri,sat,sun",
             "start_time_utc": "14:00:00",
