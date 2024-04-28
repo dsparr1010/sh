@@ -7,10 +7,10 @@ poetry shell
 poetry install
 
 # migrate
-python manage.py migrate
+python3 manage.py migrate
 
-# run custom command
-python manage.py seed_parking_rates
+# run custom command to seed database
+python3 manage.py seed_parking_rates
 
-
-python manage.py runserver 5000
+# run the server
+python3 manage.py runserver 5000
