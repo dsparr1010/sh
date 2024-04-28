@@ -98,6 +98,11 @@ chmod +x run_app.sh
 - Query Parameters:
     `?start=2015-07-01T07:00:00-05:00&end=2015-07-01T12:00:00-05:00`
 - Response: If found, returns the price 
+    ```json
+    {
+        "price": 1750
+    }
+    ```
     - If there was nothing found in the given time range or the time range spans over a day, the response will be:
     `"unavailable"`
 
