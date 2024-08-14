@@ -8,6 +8,11 @@ def seed_database_with_parking_rates():
         ParkingRate,
     )  # Needs to stay scoped within this function; otherwise App has not loaded yet
 
+    if ParkingRate.objects.all().count() > 1:
+        # Return if there are already rows populated to prevent duplicates
+        print("ParkingRate objects already populated \nReturning...")
+        return
+
     with open(
         "rates/static_files/sample_rates.json", mode="r", encoding="utf-8"
     ) as sample_rates:

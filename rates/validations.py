@@ -1,6 +1,6 @@
 import pytz
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List
 from django.core.exceptions import ValidationError
 
@@ -22,6 +22,13 @@ def validate_time_range_in_correct_format(times: str):
     pattern = r"^[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]$"
     if not re.match(pattern, times):
         raise ValidationError("Invalid time range format. Use '0600-1800' format")
+
+
+def validate_time_range_is_not_over_24_hours(start_time: str, end_time: str):
+    """Detects if a time span ranges over 24 hours"""
+    time_difference = abs(end_time - start_time)
+    if time_difference > timedelta(hours=24):
+        raise UnavailableTimeSpansError
 
 
 def validate_time_range_spans_one_day(days_of_week: List):

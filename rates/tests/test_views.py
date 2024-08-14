@@ -26,17 +26,22 @@ class TestPriceListView:
             (
                 "2015-07-01T06:00:00-05:00",  # Wednesday 6am CST
                 "2015-07-01T17:00:00-05:00",  # -> 5pm CST
-                "parking_rate_wed",
+                "parking_rate_mon_wed_sat",
             ),
             (
                 "2015-07-03T10:00:00-06:00",  # Friday 10am EST
-                "2015-07-03T16:00:00-06:00",  # -> 4pm EST
+                "2015-07-03T15:00:00-06:00",  # -> 4pm EST
                 "parking_rate_fri_sat_sun",
             ),
             (
                 "2015-07-02T23:00:00+09:00",  # Thursday 11pm JST
                 "2015-07-02T23:05:00+09:00",  # -> 11:05pm JST
                 "parking_rate_mon_tues_thurs",
+            ),
+            (
+                "2015-07-01T07:00:00-05:00",  # Wednesday 1pm CST
+                "2015-07-01T12:00:00-05:00",  # -> 5pm CST
+                "parking_rate_mon_wed_sat",
             ),
         ),
     )
@@ -55,6 +60,16 @@ class TestPriceListView:
         response = self.client.get(url_w_params)
         assert "price" in response.data
         assert response.data["price"] == matching_rate_fixture.price
+
+    @pytest.mark.django_db(transaction=True)
+    def test_returns_unavailable_when_time_span_is_invalid(
+        self, parking_rate_fri_sat_sun
+    ):
+        url_w_params = (
+            f"{self.url}?start=2015-07-04T15:00:00+05:00&end=2015-07-04T20:00:00+00:00"
+        )
+        response = self.client.get(url_w_params)
+        assert "unavailable" in response.data
 
 
 class TestRatesListView:

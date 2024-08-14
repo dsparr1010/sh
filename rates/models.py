@@ -5,27 +5,28 @@ from rates.exceptions import UnavailableTimeSpansError
 
 class ParkingRateManager(models.Manager):
 
-    def filter_within_time_frame(self, start_time, end_time, day):
+    def filter_within_time_frame(
+        self, start_time: datetime, end_time: datetime, day: str
+    ):
         """Query for rates within a day and time range"""
-        results = self.filter_within_time_start_day_time(start_time=start_time, day=day)
+
+        end_time_query_construction = (
+            "end_time_utc__lte" if start_time < end_time else "end_time_utc__gte"
+        )
+        end_time_query = {end_time_query_construction: end_time}
+
+        results = self.get_queryset().filter(
+            days__icontains=day,
+            start_time_utc__lte=start_time,
+            **end_time_query,
+        )
 
         match len(results):
             case 0:
                 # no applicable matches found
                 raise UnavailableTimeSpansError
-            case 1:
-                # Only one was found - no need to filter deeper
-                return results
             case _:
-                return results.filter(end_time_utc__gte=end_time)
-
-    def filter_within_time_start_day_time(self, day: str, start_time: datetime):
-        """Query for rates within a day and after a start time"""
-        return self.filter_by_day(day=day).filter(start_time_utc__lte=start_time)
-
-    def filter_by_day(self, day: str):
-        """Query for rates that contain a specific day or days"""
-        return self.get_queryset().filter(days__icontains=day)
+                return results
 
 
 class ParkingRate(models.Model):

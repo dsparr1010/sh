@@ -5,6 +5,7 @@ from rates.services.parking_rate_service import ParkingRateService
 from rates.validations import (
     validate_start_time_is_before_end_time,
     validate_time_range_in_correct_format,
+    validate_time_range_is_not_over_24_hours,
     validate_time_range_spans_one_day,
     validate_timezone_name_is_recognized,
 )
@@ -30,6 +31,10 @@ class PriceQueryParamsDeserializer(serializers.Serializer):
 
     def validate(self, attrs):
         validate_start_time_is_before_end_time(
+            start_time=attrs["start"], end_time=attrs["end"]
+        )
+
+        validate_time_range_is_not_over_24_hours(
             start_time=attrs["start"], end_time=attrs["end"]
         )
 

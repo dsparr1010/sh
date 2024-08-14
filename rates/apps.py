@@ -13,9 +13,14 @@ class RatesConfig(AppConfig):
 
     # def ready(self):
     #     """Overriding 'ready' method to perform initialization tasks"""
-    #     if apps.ready:
-    #         print("Seeding database...")
-    #         seed_database_with_parking_rates()
-    #         print("Success!")
-    #     else:
-    #         print("Rates app is not ready - seeding database failed :(")
+
+
+    # Could have possbily tried calling ready first: super().ready()
+    # Then running seeding function that is located inside this class
+
+#     if apps.ready:
+#         print("Seeding database...")
+#         seed_database_with_parking_rates()
+#         print("Success!")
+#     else:
+#         print("Rates app is not ready - seeding database failed :(")

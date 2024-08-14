@@ -30,8 +30,8 @@ class PriceListView(ListModelMixin, viewsets.GenericViewSet):
         try:
 
             if serializer.is_valid(raise_exception=True):
-                start_time = self.request.query_params["start"]
-                end_time = self.request.query_params["end"]
+                # start_time = self.request.query_params["start"]
+                # end_time = self.request.query_params["end"]
 
                 return ParkingRateService.get_rates_within_datetimes(
                     start=start_time, end=end_time

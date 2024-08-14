@@ -6,6 +6,7 @@ from rates.exceptions import UnavailableTimeSpansError
 from rates.validations import (
     validate_start_time_is_before_end_time,
     validate_time_range_in_correct_format,
+    validate_time_range_is_not_over_24_hours,
     validate_time_range_spans_one_day,
 )
 
@@ -72,6 +73,39 @@ class TestValidateStartAndEndTimes:
         """Ensure validation raises error if time range is not in correct format"""
         with expectation:
             validate_time_range_in_correct_format(times=time_range)
+
+    @pytest.mark.parametrize(
+        "start_time,end_time,expectation",
+        (
+            (
+                datetime.fromisoformat("2015-07-04T20:00:00+00:00"),
+                datetime.fromisoformat("2015-07-11T15:00:00+00:00"),
+                pytest.raises(UnavailableTimeSpansError),
+            ),
+            (
+                datetime.fromisoformat("2015-07-01T12:00:00-05:00"),
+                datetime.fromisoformat("2015-07-08T07:00:00-05:00"),
+                pytest.raises(UnavailableTimeSpansError),
+            ),
+            (
+                datetime.fromisoformat("2015-07-04T15:00:00+00:00"),
+                datetime.fromisoformat("2015-07-04T20:00:00+00:00"),
+                does_not_raise(),
+            ),
+            (
+                datetime.fromisoformat("2015-07-01T07:00:00-05:00"),
+                datetime.fromisoformat("2015-07-01T12:00:00-05:00"),
+                does_not_raise(),
+            ),
+        ),
+    )
+    def test_validate_time_range_is_not_over_24_hours(
+        self, start_time, end_time, expectation
+    ):
+        with expectation:
+            validate_time_range_is_not_over_24_hours(
+                start_time=start_time, end_time=end_time
+            )
 
     @pytest.mark.parametrize(
         "days_list,expectation",
